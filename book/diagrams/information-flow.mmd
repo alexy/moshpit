@@ -1,0 +1,19 @@
+flowchart LR
+  subgraph MAC["Mac"]
+    KB["Keyboard / mouse"] --> GT["Ghostty or Terminal"]
+    GT --> LT["Local tmux (optional)"]
+    PB["macOS clipboard / pbcopy"]
+  end
+  subgraph NET["Network"]
+    MO["mosh · UDP roaming session"]
+    SS["SSH · reliable side channel"]
+    TS["Tailscale · private reachability"]
+  end
+  subgraph LINUX["Remote Linux"]
+    RT["Remote tmux"] --> SH["shell · editor · agent"]
+  end
+  LT -->|"keystrokes + Cmd-V paste"| MO --> RT
+  RT -->|"small copy: OSC 52 c;"| MO --> GT --> PB
+  RT -->|"any-size copy: ssh mac pbcopy"| SS --> PB
+  TS -. "makes Mac reachable" .-> SS
+

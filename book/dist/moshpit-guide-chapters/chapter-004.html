@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Alexy Khrabrov" />
+  <meta name="description" content="A practical guide to building a resilient Mac-to-Linux agent-development environment with Ghostty, tmux, mosh, SSH, Tailscale, and OSC 52." />
+  <title>3. SSH: identity, bootstrap, and a reliable side
+channel</title>
+  <style>
+    div.sitenav { display: flex; flex-direction: row; flex-wrap: wrap; }
+    span.navlink { flex: 1; }
+    span.navlink-label { display: inline-block; min-width: 4em; }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<nav id="sitenav">
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Up:</span> <a href="index.html" accesskey="u" rel="up">Moshpit: A Guide to Agent Development with Mosh, Tmux and Ghostty</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Top:</span> <a href="index.html" accesskey="t" rel="top">Moshpit: A Guide to Agent Development with Mosh, Tmux and Ghostty</a>
+</span>
+</div>
+<div class="sitenav">
+<span class="navlink">
+<span class="navlink-label">Next:</span> <a href="chapter-005.html" accesskey="n" rel="next">4. mosh: the roaming interactive transport</a>
+</span>
+<span class="navlink">
+<span class="navlink-label">Previous:</span> <a href="chapter-003.html" accesskey="p" rel="previous">2. tmux: a persistent workspace</a>
+</span>
+</div>
+</nav>
+<h1 data-number="4"
+id="ssh-identity-bootstrap-and-a-reliable-side-channel">3. SSH:
+identity, bootstrap, and a reliable side channel</h1>
+<p>SSH provides authenticated, encrypted, ordered byte streams. In this
+design it has two jobs. First, mosh uses SSH to authenticate and start
+<code>mosh-server</code>. Second, a separate SSH connection carries
+large remote selections back to the Mac.</p>
+<h2 data-number="4.1" id="mac-key-and-agent-setup">Mac key and agent
+setup</h2>
+<p>The Mac <code>~/.zprofile</code> persists the agent environment in
+<code>~/.ssh/agent</code>, revives the agent after a reboot, protects
+the environment file with mode 600, and loads the private key through
+Apple’s Keychain integration:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode zsh"><code class="sourceCode zsh"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">SSH_ENV</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$HOME</span><span class="st">/.ssh/agent&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">_ssh_agent_start()</span> <span class="kw">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ssh-agent</span> <span class="at">-s</span> <span class="op">&gt;</span> <span class="st">&quot;</span><span class="va">$SSH_ENV</span><span class="st">&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chmod</span> 600 <span class="st">&quot;</span><span class="va">$SSH_ENV</span><span class="st">&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="bu">.</span> <span class="st">&quot;</span><span class="va">$SSH_ENV</span><span class="st">&quot;</span> <span class="op">&gt;</span> /dev/null</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ssh-add</span> <span class="at">--apple-use-keychain</span> <span class="st">&quot;</span><span class="va">$HOME</span><span class="st">/.ssh/YOUR_MAC_KEY&quot;</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> <span class="ot">-f</span> <span class="st">&quot;</span><span class="va">$SSH_ENV</span><span class="st">&quot;</span> <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="bu">.</span> <span class="st">&quot;</span><span class="va">$SSH_ENV</span><span class="st">&quot;</span> <span class="op">&gt;</span> /dev/null</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh-add</span> <span class="at">-l</span> <span class="op">&gt;</span> /dev/null <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="bu">[</span> <span class="va">$?</span> <span class="ot">-eq</span> 2 <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="ex">_ssh_agent_start</span></span></code></pre></div>
+<p><code>ssh-add -l</code> returning 2 means the recorded agent is no
+longer reachable. The profile then starts a replacement instead of
+spawning a new agent for every shell. In <code>~/.ssh/config</code>, use
+<code>AddKeysToAgent yes</code>, <code>UseKeychain yes</code>, and an
+explicit <code>IdentityFile</code> for Mac-originated connections.</p>
+<h2 data-number="4.2" id="debian-key-and-agent-setup">Debian key and
+agent setup</h2>
+<p>The repository’s <code>linux.zprofile</code> prefers an agent
+forwarded from the Mac. Only when <code>SSH_AUTH_SOCK</code> is empty
+does it source <code>~/.ssh/agent.env</code>, test the saved agent, and
+create a new one if necessary. It then loads each server-side key only
+when <code>ssh-add -T KEY.pub</code> says the agent cannot already sign
+for that public key.</p>
+<p>This order is intentional:</p>
+<ol type="1">
+<li>Use the forwarded Mac agent when one exists; the private key stays
+on the Mac.</li>
+<li>Otherwise reuse the server’s persisted agent.</li>
+<li>Start a fresh server agent only when the old socket is stale.</li>
+<li>Add only keys that are actually present and not already loaded.</li>
+</ol>
+<p>The checked-in array demonstrates several keys. In published
+examples, use neutral placeholders:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode zsh"><code class="sourceCode zsh"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">SSH_KEYS</span><span class="op">=</span><span class="va">(</span><span class="st">&quot;</span><span class="va">$HOME</span><span class="st">/.ssh/&quot;</span><span class="dt">{remote_a</span><span class="op">,</span><span class="dt">remote_b}</span><span class="va">)</span></span></code></pre></div>
+<p>Treat those names as local examples. A public guide should show
+placeholders, and a public repository must never contain the
+corresponding private key bytes.</p>
+<h2 data-number="4.3" id="the-mac-as-an-allowed-ssh-destination">The Mac
+as an allowed SSH destination</h2>
+<p>Enable System Settings → General → Sharing → Remote Login. Restrict
+access to the intended user. Put each remote host’s public key—not its
+private key—in the Mac user’s <code>~/.ssh/authorized_keys</code>
+(sometimes casually called the “allowed hosts” list), one key per line.
+Set safe permissions:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 700 ~/.ssh</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 600 ~/.ssh/authorized_keys</span></code></pre></div>
+<p>Optionally constrain a clipboard-only key in
+<code>authorized_keys</code> with a forced command that accepts input
+only for <code>pbcopy</code>; otherwise a key authorized for SSH can
+open a normal login. Tailscale ACLs should also limit remote hosts to
+TCP port 22 on the Mac.</p>
+<h2 data-number="4.4" id="remote-alias-for-clipboard-return">Remote
+alias for clipboard return</h2>
+<p>On each Linux host, install the repository’s
+<code>linux.ssh.config</code> as (or merge it into)
+<code>~/.ssh/config</code>. The checked-in file names the Mac through
+Tailscale and uses the server-side <code>linux</code> identity; the
+portable form is:</p>
+<pre class="sshconfig"><code>Host mac
+    HostName your-mac.your-tailnet.ts.net
+    User your-mac-user
+    IdentityFile ~/.ssh/YOUR_REMOTE_TO_MAC_KEY
+    ControlMaster auto
+    ControlPath ~/.ssh/cm-%r@%h:%p
+    ControlPersist 10m
+    BatchMode yes
+    ConnectTimeout 3</code></pre>
+<p>The first copy opens a TCP connection; later copies—many of them tiny
+clipboard payloads—reuse its control socket instead of repeating key
+exchange and authentication. <code>ControlPersist 10m</code> keeps that
+master alive between copies. <code>BatchMode yes</code> prevents a
+selection from hanging on a password prompt, and the short timeout fails
+quickly if the Mac is asleep.</p>
+<p>It helps to name the two kinds of reuse accurately.
+<code>linux.zprofile</code> makes login shells converge on one usable
+<strong>SSH agent</strong>, so sessions can ask the same credential
+broker to sign. <code>linux.ssh.config</code> makes clipboard commands
+converge on one <strong>multiplexed SSH transport</strong>, so
+<code>ssh mac pbcopy</code> can send small packets over an
+already-authenticated connection. An agent holds or brokers identities;
+it is not itself the network connection.</p>
+</body>
+</html>

@@ -1,0 +1,8 @@
+body { font-family: ui-serif, Georgia, serif; line-height: 1.48; color: #162019; }
+h1, h2, h3 { font-family: ui-sans-serif, system-ui, sans-serif; color: #45306f; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+pre { background: #f3f0f7; border-left: 4px solid #8b65c6; padding: 0.8em; overflow-x: auto; }
+blockquote { border-left: 4px solid #e0bd32; margin-left: 0; padding-left: 1em; color: #354839; }
+img { max-width: 100%; height: auto; }
+.figure { text-align: center; }
+

@@ -14,3 +14,18 @@ Prerequisites:
 We use Ghostty as a terminal supporting OSC 52.  iTerm2 allegedly does too, while the default Mac Terminal does not.
 See MOSHPIT.md for the detailed explanation of the remote config.
 The Mac config is supposed to copy selections of all kinds.
+
+## Book edition
+
+The illustrated First Pair Press guide lives in `book/`, with the announcement
+source and portable `.textpack` in `blog/`. Rebuild the PDF, EPUB, HTML, cover,
+headboard, diagrams, and staged configuration screenshots with:
+
+```sh
+python3 scripts/build_visuals.py
+scripts/build_book.sh
+```
+
+The canonical First Pair builder configuration is `book/book.build.json`. The
+local wrapper exists so the book can still be rendered when the installed Mac
+toolchain does not yet match First Pair's strict publishing lock.

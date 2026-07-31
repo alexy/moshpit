@@ -1,0 +1,11 @@
+title: "Moshpit: A Guide to Agent Development with Mosh, Tmux and Ghostty"
+subtitle: "Persistent remote sessions, reliable clipboards, and a terminal that stays out of the way"
+author: "Alexy Khrabrov"
+creator: "Alexy Khrabrov"
+publisher: "First Pair Press"
+rights: "Copyright © 2026 Alexy Khrabrov"
+lang: en-US
+title_stem: moshpit-guide
+subject: "Terminal environments; remote development; agent development; mosh; tmux; Ghostty"
+description: "A practical guide to building a resilient Mac-to-Linux agent-development environment with Ghostty, tmux, mosh, SSH, Tailscale, and OSC 52."
+

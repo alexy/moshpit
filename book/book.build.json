@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "bookRoot": ".",
+  "manuscript": "manuscript.md",
+  "metadata": "metadata.yaml",
+  "cover": "cover.md",
+  "css": "epub.css",
+  "stem": "moshpit-guide",
+  "version": "1.0.0",
+  "dist": "dist",
+  "buildDir": "build",
+  "edition": "full",
+  "primaryFormat": "typst",
+  "headboardImage": "assets/moshpit-headboard.png",
+  "mobi": false,
+  "pdf": {
+    "coverImage": "assets/moshpit-cover.png",
+    "coverFit": "cover"
+  },
+  "epub": {
+    "coverImage": "assets/moshpit-cover.png"
+  },
+  "pandoc": {
+    "reader": "markdown+smart",
+    "tocDepth": 2,
+    "numberSections": false
+  }
+}

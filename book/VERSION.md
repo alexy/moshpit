@@ -3,12 +3,12 @@ subtitle: Persistent remote sessions, reliable clipboards, and a terminal that s
 author: Alexy Khrabrov
 title_stem: moshpit-guide
 edition: full
-version: 1.0.0
-version_stamp: 1.0.0-ccf3ea9e
-source_commit: ccf3ea9e
-built_at: 2026-07-31T18:06:13Z
+version: 1.0.1
+version_stamp: 1.0.1-cde24119
+source_commit: cde24119
+built_at: 2026-08-01T00:38:12Z
 primary_format: typst
-kindle_name: moshpit-guide (1.0.0)
+kindle_name: moshpit-guide (1.0.1)
 kindle_link: moshpit-guide.epub
 pdf_file: moshpit-guide.pdf
 epub_file: moshpit-guide.epub

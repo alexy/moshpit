@@ -84,9 +84,15 @@ The repository keeps two useful behaviors. “Copy and jump” uses `copy-select
 bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-no-clear
 bind -T copy-mode-vi DoubleClick1Pane  send -X select-word \; send -X copy-pipe-no-clear
 bind -T copy-mode-vi TripleClick1Pane  send -X select-line \; send -X copy-pipe-no-clear
+bind -T root DoubleClick1Pane select-pane \; copy-mode -M \; send -X select-word \; send -X copy-pipe-no-clear
+bind -T root TripleClick1Pane select-pane \; copy-mode -M \; send -X select-line \; send -X copy-pipe-no-clear
 ```
 
-For jump-on-copy, replace the last action with `copy-selection-and-cancel`. The no-clear form is especially pleasant while studying long logs: copy several fragments without snapping to the prompt, then press `q`.
+The extra bindings cover two states. The `copy-mode-vi` table handles clicks after scrolling has already entered copy-mode. The `root` table handles a double- or triple-click made directly from the live pane: it selects the pane, enters copy-mode at the mouse position, selects the word or line, and copies without clearing. A drag is already routed through copy-mode by tmux mouse handling, so its copy-mode binding is sufficient.
+
+This matters when moving several fragments from a large output or input block in one box to an editor or agent in another. With `copy-selection-and-cancel`, the first mouse release copies to the tmux buffer and clipboard, immediately cancels copy-mode, removes the highlight, and jumps the viewport back to the live input point. The next fragment then requires finding the old block again. `copy-pipe-no-clear` still copies immediately—through local `pbcopy` or remote `ssh mac pbcopy`—but leaves the selection highlighted exactly where it is. You can copy another word, line, or region from the same block, paste each fragment into the other box, and press `q` or Escape only when the transfer is finished.
+
+For jump-on-copy, replace the last action with `copy-selection-and-cancel`. It is convenient for a single extraction when returning immediately to the prompt is desirable; the no-clear family is the deliberate choice for repeated transfers from long blocks.
 
 ## Local and remote copy commands
 

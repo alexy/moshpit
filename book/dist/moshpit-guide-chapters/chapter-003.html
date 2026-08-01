@@ -46,7 +46,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -161,8 +160,12 @@
       text-decoration: none;
     }
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -311,11 +314,33 @@ ends, and the viewport returns to live output. “Copy and stay” uses
 The Mac configuration chooses stay:</p>
 <pre class="tmux"><code>bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-no-clear
 bind -T copy-mode-vi DoubleClick1Pane  send -X select-word \; send -X copy-pipe-no-clear
-bind -T copy-mode-vi TripleClick1Pane  send -X select-line \; send -X copy-pipe-no-clear</code></pre>
+bind -T copy-mode-vi TripleClick1Pane  send -X select-line \; send -X copy-pipe-no-clear
+bind -T root DoubleClick1Pane select-pane \; copy-mode -M \; send -X select-word \; send -X copy-pipe-no-clear
+bind -T root TripleClick1Pane select-pane \; copy-mode -M \; send -X select-line \; send -X copy-pipe-no-clear</code></pre>
+<p>The extra bindings cover two states. The <code>copy-mode-vi</code>
+table handles clicks after scrolling has already entered copy-mode. The
+<code>root</code> table handles a double- or triple-click made directly
+from the live pane: it selects the pane, enters copy-mode at the mouse
+position, selects the word or line, and copies without clearing. A drag
+is already routed through copy-mode by tmux mouse handling, so its
+copy-mode binding is sufficient.</p>
+<p>This matters when moving several fragments from a large output or
+input block in one box to an editor or agent in another. With
+<code>copy-selection-and-cancel</code>, the first mouse release copies
+to the tmux buffer and clipboard, immediately cancels copy-mode, removes
+the highlight, and jumps the viewport back to the live input point. The
+next fragment then requires finding the old block again.
+<code>copy-pipe-no-clear</code> still copies immediately—through local
+<code>pbcopy</code> or remote <code>ssh mac pbcopy</code>—but leaves the
+selection highlighted exactly where it is. You can copy another word,
+line, or region from the same block, paste each fragment into the other
+box, and press <code>q</code> or Escape only when the transfer is
+finished.</p>
 <p>For jump-on-copy, replace the last action with
-<code>copy-selection-and-cancel</code>. The no-clear form is especially
-pleasant while studying long logs: copy several fragments without
-snapping to the prompt, then press <code>q</code>.</p>
+<code>copy-selection-and-cancel</code>. It is convenient for a single
+extraction when returning immediately to the prompt is desirable; the
+no-clear family is the deliberate choice for repeated transfers from
+long blocks.</p>
 <h2 data-number="3.3" id="local-and-remote-copy-commands">Local and
 remote copy commands</h2>
 <p>On the Mac, tmux pipes copied bytes directly to the system
